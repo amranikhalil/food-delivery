@@ -1,164 +1,104 @@
-import { useState, useEffect } from "react";
-import DishInfo from "./DishInfo";
+import { useState } from "react";
+import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
-import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
-import StatusButton from "./StatusButton";
+import { formatDA, formatDate, NEXT_STEP, STATUS } from "../../lib/format";
 
-const OrderModal = ({ setIsActive, selectedOrder }) => {
-  const [dishes, setDishes] = useState([]);
-  const [status, setStatus] = useState("PENDING");
+const button = "flex-1 py-3 rounded-xl font-bold text-base duration-150 disabled:opacity-50";
 
-  useEffect(() => {
-    const getDishId = async () => {
-      const dishesRef = collection(db, "orderDishes");
-      const q = query(dishesRef, where("orderId", "==", selectedOrder.id));
+const OrderModal = ({ order, onClose }) => {
+  const [saving, setSaving] = useState(false);
+  const status = STATUS[order.status] || { label: order.status };
+  const next = NEXT_STEP[order.status];
+  const whatsapp = order.userPhoneNumber ? `https://wa.me/213${order.userPhoneNumber.slice(1)}` : null;
 
-      await getDocs(q).then((querySnapshot) => {
-        let dishIds = [];
-        let items = [];
-        // querySnapshot.forEach((doc) => {
-        //   dishIds.push(doc.data().dishId);
-        // });
-        querySnapshot.forEach((doc) => {
-          items.push({ ...doc.data() });
-        });
-        // setDishIds(dishIds);
-        setDishes(items);
-      });
-    };
-
-    const orderRef = doc(db, "orders", selectedOrder.id);
-    updateDoc(orderRef, {
-      status: status
-    });
-
-    getDishId();
-  }, [status]);
-
-  let statusText, statusColor;
-  if (status === "PENDING") {
-    statusText = "Order Pending ⏳";
-    statusColor = "text-yellow-400";
-  } else if (status === "ACCEPTED") {
-    statusText = "Order Confirmed 🍽";
-    statusColor = "text-orange-500";
-  } else if (status === "DECLINED") {
-    statusText = "Order Declined ❌";
-    statusColor = "text-red-500";
-  } else if (status === "PREPARING") {
-    statusText = "Preparing Food 🍲";
-    statusColor = "text-yellow-500";
-  } else if (status === "READY") {
-    statusText = "Ready for Pickup 🛵";
-    statusColor = "text-green-500";
-  } else if (status === "PICKEDUP") {
-    statusText = "Picked Up by Driver 🚲";
-    statusColor = "text-green-500"; // green
-  } else if (status === "COMPLETE") {
-    statusText = "Delivered ✅";
-    statusColor = "text-green-500"; // green
-  }
-
-  console.log("status:", status)
+  const setStatus = async (newStatus) => {
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, "orders", order.id), { status: newStatus });
+    } catch (e) {
+      console.error(e);
+      alert("Erreur : le statut n'a pas pu être changé.");
+    }
+    setSaving(false);
+  };
 
   return (
     <div className="fixed inset-0 z-10 overflow-y-auto">
-      <div
-        className="fixed inset-0 w-full h-full bg-black opacity-60"
-        onClick={() => setIsActive(false)}
-      ></div>
+      <div className="fixed inset-0 w-full h-full bg-black opacity-60" onClick={onClose}></div>
       <div className="flex items-center min-h-screen px-4 py-8">
-        <div className="relative w-full max-w-2xl p-4 mx-auto bg-white rounded-2xl shadow-lg">
-          <div className="flex justify-end">
-            <button
-              className="p-2 text-gray-500 rounded-lg hover:bg-red-100"
-              onClick={() => setIsActive(false)}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-5 h-5 mx-auto"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
+        <div className="relative w-full max-w-2xl p-6 mx-auto bg-white rounded-2xl shadow-lg space-y-5">
+          <div className="flex justify-between items-start">
+            <div>
+              <h4 className="text-2xl font-bold text-gray-800">
+                Commande #{order.id.slice(0, 6).toUpperCase()}
+              </h4>
+              <p className="text-gray-500">{formatDate(order.createdAt)}</p>
+            </div>
+            <button className="p-2 text-gray-500 rounded-lg hover:bg-red-100 text-xl" onClick={onClose}>
+              ✕
             </button>
           </div>
-          <div className="max-w-sm mx-auto py-3 space-y-3 text-center">
-            <h4 className="text-xl font-bold text-gray-500">
-              Order #{selectedOrder.id}
-            </h4>
-            <h4 className="text-xl font-bold text-gray-500">
-              Current Status:{" "}
-              {statusText && <span className={statusColor}>{statusText}</span>}
-            </h4>
+
+          <p className={`inline-block px-3 py-1 rounded-xl font-semibold border ${status.className}`}>
+            {status.emoji} {status.label}
+          </p>
+
+          {/* Customer */}
+          <div className="bg-gray-50 rounded-xl p-4 space-y-1">
+            <p className="font-bold text-lg text-gray-800">{order.userFirstName} {order.userLastName}</p>
+            <p className="text-gray-700">📍 {order.userAddress}</p>
+            {order.note && <p className="text-gray-700">📝 {order.note}</p>}
+            <div className="flex gap-2 pt-2">
+              <a href={`tel:${order.userPhoneNumber}`} className="px-3 py-2 rounded-lg bg-white border font-semibold">
+                📞 {order.userPhoneNumber}
+              </a>
+              {whatsapp && (
+                <a href={whatsapp} target="_blank" rel="noreferrer" className="px-3 py-2 rounded-lg bg-green-500 text-white font-semibold">
+                  WhatsApp
+                </a>
+              )}
+            </div>
           </div>
 
-          <div className="flex flex-col gap-y-2">
-            <div className="flex flex-col gap-y-1">
-              <div>
-                {dishes.map((dish) => {
-                  return (
-                    <DishInfo
-                      key={dish.dishId}
-                      id={dish.dishId}
-                      quantity={dish.quantity}
-                    />
-                  );
-                })}
+          {/* Items */}
+          <div>
+            {(order.items || []).map((item) => (
+              <div key={item.dishId} className="flex justify-between py-2 border-b text-lg">
+                <span>
+                  <span className="font-bold text-green-600">{item.quantity} ×</span> {item.name}
+                </span>
+                <span className="text-gray-600">{formatDA(item.price * item.quantity)}</span>
               </div>
-
-              <div className="w-full flex py-4 justify-around font-bold text-lg text-gray-700">
-                <div>Total:</div>
-                <div>Rs. {selectedOrder.total}</div>
+            ))}
+            {order.deliveryFee != null && (
+              <div className="flex justify-between py-2 text-gray-500">
+                <span>Livraison</span>
+                <span>{formatDA(order.deliveryFee)}</span>
               </div>
-
-              <div className="flex justify-between items-center">
-                {status === "PENDING" && (
-                  <>
-                    <div className="w-2/4">
-                      <button
-                        onClick={() => setStatus("ACCEPTED")}
-                        className=" w-11/12 my-3 cursor-pointer items-center gap-x-2 text-gray-700 font-bold text-base p-2 rounded-xl  hover:bg-green-200 active:bg-green-400 duration-150 bg-green-200 border-l-4 border-b-4 border-green-500"
-                      >
-                        Accept
-                      </button>
-                    </div>
-                    <div className="w-2/4">
-                      <button
-                        onClick={() => { setStatus("DECLINED") }}
-                        className=" w-11/12 my-3 cursor-pointer items-center gap-x-2 text-gray-700 font-bold text-base p-2 rounded-xl  hover:bg-red-200 active:bg-red-400 duration-150 bg-red-200 border-l-4 border-b-4 border-red-500"
-                      >
-                        Decline
-                      </button>
-                    </div>
-                  </>
-                )}
-                {status === "ACCEPTED" && (
-                  <div className="w-2/4 mx-auto">
-                    <button
-                      onClick={() => setStatus("PREPARING")}
-                      className=" w-11/12 my-3 cursor-pointer items-center gap-x-2 text-gray-700 font-bold text-base p-2 rounded-xl  hover:bg-yellow-200 active:bg-yellow-400 duration-150 bg-yellow-200 border-l-4 border-b-4 border-yellow-500"
-                    >
-                      Preparing Food
-                    </button>
-                  </div>
-                )}
-                {status === "PREPARING" && (
-                  <div className="w-2/4 mx-auto">
-                    <button
-                      onClick={() => { setStatus("READY") }}
-                      className=" w-11/12 my-3 cursor-pointer items-center gap-x-2 text-gray-700 font-bold text-base p-2 rounded-xl  hover:bg-green-200 active:bg-green-400 duration-150 bg-green-200 border-l-4 border-b-4 border-green-500"
-                    >
-                      Ready for Pickup
-                    </button>
-                  </div>)}
-              </div>
+            )}
+            <div className="flex justify-between py-2 font-bold text-xl text-gray-800">
+              <span>Total (espèces à la livraison)</span>
+              <span>{formatDA(order.total)}</span>
             </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            {order.status === "PENDING" && (
+              <>
+                <button disabled={saving} onClick={() => setStatus("ACCEPTED")} className={`${button} bg-green-500 text-white hover:bg-green-600`}>
+                  Accepter
+                </button>
+                <button disabled={saving} onClick={() => setStatus("DECLINED")} className={`${button} bg-red-100 text-red-700 hover:bg-red-200`}>
+                  Refuser
+                </button>
+              </>
+            )}
+            {next && (
+              <button disabled={saving} onClick={() => setStatus(next.to)} className={`${button} bg-green-500 text-white hover:bg-green-600`}>
+                {next.label}
+              </button>
+            )}
           </div>
         </div>
       </div>

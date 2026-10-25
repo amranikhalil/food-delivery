@@ -1,114 +1,58 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
-import { doc, updateDoc } from "firebase/firestore";
+import { RESTAURANT_ID, DEFAULT_DELIVERY_FEE } from "../../config";
+
+const FIELDS = [
+  { name: "name", label: "Nom du restaurant", placeholder: "Ex : Chez Karim" },
+  { name: "genre", label: "Type de cuisine", placeholder: "Ex : Fast-food, Pizzeria" },
+  { name: "address", label: "Adresse", placeholder: "Ex : Rue Didouche Mourad, Alger" },
+  { name: "phone", label: "Téléphone", placeholder: "Ex : 0550 12 34 56" },
+  { name: "deliveryFee", label: "Frais de livraison (DA)", placeholder: String(DEFAULT_DELIVERY_FEE) },
+  { name: "image", label: "Lien de la photo de couverture", placeholder: "https://…" },
+];
 
 const Settings = () => {
-  const [restaurantData, setRestaurantData] = useState({
-    name: "",
-    image: "",
-    address: "",
-    genre: "",
-  });
-  const restaurantId = "5IdiasERdP0Xq0otooZn";
+  const [data, setData] = useState({});
+  const [saved, setSaved] = useState(false);
 
-  const handleInputChange = (event) => {
-    const { name, value } = event.target;
-    setRestaurantData({
-      ...restaurantData,
-      [name]: value,
+  useEffect(() => {
+    getDoc(doc(db, "restaurants", RESTAURANT_ID)).then((snap) => {
+      if (snap.exists()) setData(snap.data());
     });
-  };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const dataToUpdate = {};
-
-    // Loop through the fields and add non-empty ones to the update object
-    for (const [key, value] of Object.entries(restaurantData)) {
-      if (value.trim() !== "") {
-        dataToUpdate[key] = value;
-      }
-    }
-
-    try {
-      const resRef = doc(db, "restaurants", restaurantId);
-      await updateDoc(resRef, dataToUpdate);
-      console.log("Restaurant details updated successfully");
-    } catch (error) {
-      console.log("Error updating restaurant details:", error);
-    }
+    const update = { ...data, deliveryFee: Number(data.deliveryFee) || 0 };
+    // merge: also creates the restaurant if it doesn't exist yet
+    await setDoc(doc(db, "restaurants", RESTAURANT_ID), update, { merge: true });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="max-w-2xl pt-8 px-4 md:px-8">
-        <div className="items-start justify-between sm:flex">
-          <h4 className="text-gray-800 text-3xl font-bold">
-            Edit restaurant details
-          </h4>
-        </div>
-
-        <div className="mt-8 grid grid-cols-2 gap-y-12 ">
-          <div className="mx-auto max-w-md rounded-3xl bg-white shadow-md">
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-900">Name</h3>
-              <input
-                type="text"
-                name="name"
-                value={restaurantData.name}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-2xl py-2 px-3 mt-4 focus:outline-none focus:ring focus:ring-green-200 focus:border-green-300"
-                placeholder="Enter restaurant name"
-              />
-            </div>
-          </div>
-          <div className="mx-auto max-w-md rounded-3xl bg-white shadow-md">
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-900">Image</h3>
-              <input
-                type="text"
-                name="image"
-                value={restaurantData.image}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-2xl py-2 px-3 mt-4 focus:outline-none focus:ring focus:ring-green-200 focus:border-green-300"
-                placeholder="Enter Image link"
-              />
-            </div>
-          </div>
-          <div className="mx-auto max-w-md rounded-3xl bg-white shadow-md">
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-900">Address</h3>
-              <input
-                type="text"
-                name="address"
-                value={restaurantData.address}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-2xl py-2 px-3 mt-4 focus:outline-none focus:ring focus:ring-green-200 focus:border-green-300"
-                placeholder="Enter restaurant address"
-              />
-            </div>
-          </div>
-          <div className="mx-auto max-w-md rounded-3xl bg-white shadow-md">
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-900">Genre</h3>
-              <input
-                type="text"
-                name="genre"
-                value={restaurantData.genre}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-2xl py-2 px-3 mt-4 focus:outline-none focus:ring focus:ring-green-200 focus:border-green-300"
-                placeholder="Enter restaurant genre"
-              />
-            </div>
-          </div>
-
-          <button className="ml-6 w-full my-3 cursor-pointer items-center gap-x-2 text-gray-700 font-semibold text-base p-2 rounded-xl  hover:bg-green-100 active:bg-green-400 duration-150 bg-green-100 border-l-4 border-b-4 border-green-500">
-            Update Details
-          </button>
-        </div>
+    <form onSubmit={handleSubmit} className="max-w-3xl pt-8 px-4 md:px-8">
+      <h4 className="text-gray-800 text-3xl font-bold">Paramètres du restaurant</h4>
+      <div className="mt-8 grid grid-cols-2 gap-6">
+        {FIELDS.map((f) => (
+          <label key={f.name} className="block rounded-2xl bg-white shadow-sm border p-5">
+            <span className="text-lg font-bold text-gray-900">{f.label}</span>
+            <input
+              type="text"
+              value={data[f.name] ?? ""}
+              onChange={(e) => setData({ ...data, [f.name]: e.target.value })}
+              placeholder={f.placeholder}
+              className="w-full border border-gray-300 rounded-xl py-2 px-3 mt-3 focus:outline-none focus:ring focus:ring-green-200"
+            />
+          </label>
+        ))}
       </div>
+      <button className="mt-8 w-full py-3 rounded-xl bg-green-500 text-white font-bold hover:bg-green-600">
+        {saved ? "Enregistré ✓" : "Enregistrer"}
+      </button>
     </form>
   );
-}
+};
 
-export default Settings
+export default Settings;

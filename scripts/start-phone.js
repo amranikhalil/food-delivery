@@ -1,7 +1,7 @@
 // Starts Expo for testing on a phone over Wi-Fi.
 // - Puts this PC's Wi-Fi address in the QR code (not 127.0.0.1)
 // - Builds the Android bundle right away, so Expo Go doesn't time out
-// Usage (inside user-side or driver-app):  yarn phone   (extra flags pass through, e.g. yarn phone -c)
+// Usage (inside user-side or driver-app):  yarn start   (extra flags pass through, e.g. yarn start -c)
 const os = require("os");
 const http = require("http");
 const { spawn } = require("child_process");

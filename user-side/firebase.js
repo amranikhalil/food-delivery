@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore } from "firebase/firestore";
 import {
   setPersistence,
   getAuth,
@@ -24,6 +24,7 @@ export const auth = initializeAuth(app, {
 });
 
 //init database
-export const db = getFirestore(app);
+// Long polling: more reliable connection on Android phones/emulators
+export const db = initializeFirestore(app, { experimentalForceLongPolling: true });
 
 

@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "expo start",
-    "phone": "node ../scripts/start-phone.js",
+    "start": "node ../scripts/start-phone.js",
+    "start:local": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web"

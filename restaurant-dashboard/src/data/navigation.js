@@ -1,7 +1,7 @@
 
 export const navigation = [
   {
-    name: "Orders",
+    name: "Commandes",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -39,7 +39,7 @@ export const navigation = [
     ),
   },
   {
-    name: "Order History",
+    name: "Historique",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -58,7 +58,7 @@ export const navigation = [
     ),
   },
   {
-    name: "Settings",
+    name: "Paramètres",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
