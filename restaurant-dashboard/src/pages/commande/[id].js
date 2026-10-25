@@ -6,7 +6,7 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/firebase/firebase";
 import { formatDA, STATUS } from "@/lib/format";
 
-const STEPS = ["PENDING", "ACCEPTED", "PREPARING", "READY", "COMPLETE"];
+const STEPS = ["PENDING", "ACCEPTED", "PREPARING", "READY", "PICKEDUP", "COMPLETE"];
 
 export default function OrderTracking() {
   const { query } = useRouter();

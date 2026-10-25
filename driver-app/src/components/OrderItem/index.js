@@ -1,77 +1,46 @@
-import { StyleSheet, Text, View, Image, Pressable } from "react-native";
+import { Text, View, Pressable } from "react-native";
 import { Entypo } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { formatDA } from "../../utils";
 
 const OrderItem = ({ order }) => {
   const navigation = useNavigation();
+  const onTheWay = order.status === "PICKEDUP";
+
   return (
     <Pressable
       style={{
         flexDirection: "row",
         margin: 10,
-        borderColor: "#3FC060",
+        borderColor: onTheWay ? "#6366F1" : "#3FC060",
         borderWidth: 2,
         borderRadius: 12,
       }}
-      onPress={() =>
-        navigation.navigate("OrdersDeliveryScreen", { order: order })
-      }
+      onPress={() => navigation.navigate("OrdersDeliveryScreen", { order })}
     >
-      <Image
-        source={{ uri: order.restaurantImage }}
-        style={{
-          width: "25%",
-          height: "100%",
-          borderBottomLeftRadius: 10,
-          borderTopLeftRadius: 10,
-        }}
-      />
-      <View style={{ flex: 1, marginLeft: 10, paddingVertical: 5 }}>
-        <Text style={{ fontSize: 18, fontWeight: "700" }}>
-          {order.restaurantName}
+      <View style={{ flex: 1, padding: 10 }}>
+        <Text style={{ fontSize: 13, fontWeight: "700", color: onTheWay ? "#6366F1" : "#3FC060" }}>
+          {onTheWay ? "🛵 EN COURS DE LIVRAISON" : "📦 PRÊTE À RÉCUPÉRER"}
         </Text>
-        <Text style={{ color: "grey", fontWeight: "500" }}>
-          {order.restaurantAddress}
-        </Text>
-
-        <Text style={{ marginTop: 10, fontWeight: "600" }}>
-          Delivery Details:
-        </Text>
-        <Text style={{ color: "grey", fontWeight: "500" }}>
+        <Text style={{ fontSize: 18, fontWeight: "700", marginTop: 4 }}>
           {order.userFirstName} {order.userLastName}
         </Text>
-        <Text style={{ color: "grey", fontWeight: "500" }}>
-          {order.userAddress}
-        </Text>
+        <Text style={{ color: "grey", fontWeight: "500" }}>📍 {order.userAddress}</Text>
+        <Text style={{ marginTop: 6, fontWeight: "700" }}>À encaisser : {formatDA(order.total)}</Text>
       </View>
-
       <View
         style={{
-          padding: 5,
-          backgroundColor: "#3FC060",
+          padding: 8,
+          backgroundColor: onTheWay ? "#6366F1" : "#3FC060",
           borderBottomRightRadius: 10,
           borderTopRightRadius: 10,
-          alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <Entypo
-          name="check"
-          size={30}
-          color="white"
-          style={{ marginLeft: "auto" }}
-        />
+        <Entypo name="chevron-right" size={30} color="white" />
       </View>
     </Pressable>
   );
 };
 
 export default OrderItem;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    justifyContent: "center",
-  },
-});

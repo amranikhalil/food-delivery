@@ -1,21 +1,21 @@
 import { initializeApp } from "firebase/app";
 import { initializeFirestore } from "firebase/firestore";
 
-// TODO: Replace the following with your app's Firebase project configuration
-// See: https://support.google.com/firebase/answer/7015592
+// Same Firebase project as restaurant-dashboard/.env.local
+// (a Firebase web config is not secret: access is controlled by Firestore rules)
 const firebaseConfig = {
-  apiKey: "AIzaSyBJcwDzUMNJLKzAEyvRwACMYOrUS1u3oR0",
-  authDomain: "food-delivery-e0cba.firebaseapp.com",
-  projectId: "food-delivery-e0cba",
-  storageBucket: "food-delivery-e0cba.appspot.com",
-  messagingSenderId: "595569381333",
-  appId: "1:595569381333:web:6872be5d474cf64473775c",
+  apiKey: "AIzaSyDxWslqIFCc8oarY6dm_h5aLlcXZu3gCgA",
+  authDomain: "delivery-app-9afec.firebaseapp.com",
+  projectId: "delivery-app-9afec",
+  storageBucket: "delivery-app-9afec.firebasestorage.app",
+  messagingSenderId: "445319642367",
+  appId: "1:445319642367:web:14f95030d672442b08e0ca",
 };
 
+// Must match NEXT_PUBLIC_RESTAURANT_ID in the dashboard
+export const RESTAURANT_ID = "demo";
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Cloud Firestore and get a reference to the service
 // Long polling: more reliable connection on Android phones/emulators
 export const db = initializeFirestore(app, { experimentalForceLongPolling: true });

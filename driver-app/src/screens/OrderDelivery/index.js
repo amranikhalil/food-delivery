@@ -1,320 +1,134 @@
-import { useRef, useMemo, useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  useWindowDimensions,
-  ActivityIndicator,
-  Pressable,
-  Alert,
-} from "react-native";
-import BottomSheet from "@gorhom/bottom-sheet";
-import { FontAwesome5, Fontisto } from "@expo/vector-icons";
+import { useEffect, useState } from "react";
+import { View, Text, ScrollView, Pressable, Alert, StyleSheet, useWindowDimensions } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
-import { Entypo, MaterialIcons, Ionicons } from "@expo/vector-icons";
-import MapViewDirections from "react-native-maps-directions";
-import { useNavigation } from "@react-navigation/native";
-import {
-  updateDoc,
-  doc,
-  collection,
-  where,
-  query,
-  getDocs,
-} from "firebase/firestore";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { db } from "../../../firebase/firebase";
-import Config from "react-native-config";
-import DishInfo from "../../components/DishInfo";
-import styles from "./styles.js";
+import { callPhone, formatDA, hasCoords, openDirections, openWhatsApp } from "../../utils";
 
-const OrderDelivery = ({ route }) => {
-  const { order } = route.params;
-  const [driverLocation, setDriverLocation] = useState(null);
-  const [totalMinutes, setTotalMinutes] = useState(0);
-  const [totalKm, setTotalKm] = useState(0);
-  const [dishInfo, setDishInfo] = useState([]);
-  const [deliveryStatus, setDeliveryStatus] = useState("READY");
-  const navigation = useNavigation();
+const OrderDelivery = ({ route, navigation }) => {
+  const [order, setOrder] = useState(route.params.order);
+  const [location, setLocation] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const { height } = useWindowDimensions();
 
-  const bottomSheetRef = useRef(null);
-  const { width, height } = useWindowDimensions();
-  const snapPoints = useMemo(() => ["12%", "95%"], []);
-  const mapRef = useRef(null);
-
-  const restaurantLocation = {
-    latitude: order.restaurantLatitude,
-    longitude: order.restaurantLongitude,
-  };
-  const deliveryLocation = {
-    latitude: order.userLatitude,
-    longitude: order.userLongitude,
-  };
-
-  // const STATUS = {
-  //   READY_FOR_PICKUP: "READY_FOR_PICKUP",
-  //   ACCEPTED: "DRIVERACCEPTED",
-  //   PICKED_UP: "DRIVERPICKEDUP",
-  //   COMPLETE: "COMPLETE",
-  // };
+  // Live order: reflects changes made from the dashboard too
+  useEffect(() => {
+    return onSnapshot(doc(db, "orders", order.id), (snap) => {
+      if (snap.exists()) setOrder({ ...snap.data(), id: snap.id });
+    });
+  }, []);
 
   useEffect(() => {
-    getDriverLocation();
-    getDishId();
-
-    let foregroundSubscription;
     (async () => {
-      try {
-        foregroundSubscription = await Location.watchPositionAsync(
-          {
-            accuracy: Location.Accuracy.High,
-            distanceInterval: 100,
-          },
-          (updatedLocation) => {
-            setDriverLocation({
-              latitude: updatedLocation.coords.latitude,
-              longitude: updatedLocation.coords.longitude,
-            });
-          }
-        );
-      } catch (e) {
-        console.log(e);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") return;
+      const pos = await Location.getCurrentPositionAsync({});
+      setLocation(pos.coords);
+    })().catch((e) => console.log("Location error:", e));
+  }, []);
+
+  const setStatus = async (status) => {
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, "orders", order.id), { status });
+      if (status === "COMPLETE") {
+        Alert.alert("Livraison terminée 🎉", `N'oublie pas d'encaisser ${formatDA(order.total)}.`);
+        navigation.goBack();
       }
-    })();
-
-    const orderRef = doc(db, "orders", order.id);
-    updateDoc(orderRef, {
-      status: deliveryStatus,
-    });
-
-    return () => {
-      if (foregroundSubscription) {
-        foregroundSubscription.remove();
-      }
-    };
-  }, [deliveryStatus]);
-
-  const getDriverLocation = async () => {
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (!status === "granted") {
-      console.log("Nonono");
-      return;
+    } catch (e) {
+      Alert.alert("Erreur", "Le statut n'a pas pu être changé. Vérifie ta connexion.");
     }
-
-    let location = await Location.getCurrentPositionAsync();
-    setDriverLocation({
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-    });
-  };
-
-  const getDishId = async () => {
-    const dishesRef = collection(db, "orderDishes");
-    const q = query(dishesRef, where("orderId", "==", order.id));
-
-    await getDocs(q).then((querySnapshot) => {
-      let items = [];
-      querySnapshot.forEach((doc) => {
-        items.push({ ...doc.data() });
-      });
-      setDishInfo(items);
-    });
-  };
-
-  console.log(dishInfo);
-
-  if (!driverLocation) {
-    return <ActivityIndicator size={"large"} />;
-  }
-
-  const renderButtonTitle = () => {
-    if (deliveryStatus === "READY") {
-      return "Accept Order ✅";
-    }
-    if (deliveryStatus === "DRIVERACCEPTED") {
-      return "Pick-Up Order 🛵";
-    }
-    if (deliveryStatus === "DRIVERPICKEDUP") {
-      return "Payment Received 💵";
-    }
-    if (deliveryStatus === "COMPLETE") {
-      return "Complete Delivery 🎉";
-    }
-  };
-  console.log(deliveryStatus);
-  const onButtonpressed = () => {
-    if (deliveryStatus === "READY") {
-      bottomSheetRef.current?.collapse();
-      mapRef.current.animateToRegion({
-        latitude: driverLocation.latitude,
-        longitude: driverLocation.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      });
-      setDeliveryStatus("DRIVERACCEPTED");
-    }
-    if (deliveryStatus === "DRIVERACCEPTED") {
-      bottomSheetRef.current?.collapse();
-      setDeliveryStatus("DRIVERPICKEDUP");
-    }
-    if (deliveryStatus === "DRIVERPICKEDUP") {
-      bottomSheetRef.current?.collapse();
-      setDeliveryStatus("COMPLETE");
-    }
-    if (deliveryStatus === "COMPLETE") {
-      bottomSheetRef.current?.collapse();
-      setDeliveryStatus("COMPLETE");
-      navigation.goBack();
-      Alert.alert(
-        "Order Delivered 🎉",
-        "You delivered the order successfully!",
-        [
-          {
-            text: "OK",
-          },
-        ]
-      );
-    }
+    setSaving(false);
   };
 
   return (
-    <View style={styles.container}>
-      <MapView
-        ref={mapRef}
-        style={{ width, height }}
-        provider="google"
-        showsUserLocation
-        followsUserLocation
-        initialRegion={{
-          latitude: driverLocation.latitude,
-          longitude: driverLocation.longitude,
-          latitudeDelta: 0.07,
-          longitudeDelta: 0.07,
-        }}
-      >
-        <MapViewDirections
-          origin={driverLocation}
-          destination={
-            deliveryStatus === "DRIVERACCEPTED"
-              ? restaurantLocation
-              : deliveryLocation
-          }
-          strokeWidth={5}
-          waypoints={deliveryStatus === "READY" ? [restaurantLocation] : []}
-          strokeColor="green"
-          apikey="AIzaSyCi-MWuhMrs1DfJqTycPWS8N9KorPuAs-0"
-          onReady={(result) => {
-            // setIsDriverClose(result.distance <= 0.1);
-            setTotalMinutes(result.duration);
-            setTotalKm(result.distance);
+    <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
+      {location && (
+        <MapView
+          style={{ height: height * 0.3 }}
+          showsUserLocation
+          initialRegion={{
+            latitude: location.latitude,
+            longitude: location.longitude,
+            latitudeDelta: 0.03,
+            longitudeDelta: 0.03,
           }}
-        />
-        <Marker
-          coordinate={{
-            latitude: order.restaurantLatitude,
-            longitude: order.restaurantLongitude,
-          }}
-          title={order.restaurantName}
-          description={order.restaurantAddress}
         >
-          <View
-            style={{ backgroundColor: "green", padding: 5, borderRadius: 20 }}
-          >
-            <MaterialIcons name="restaurant" size={30} color="white" />
-          </View>
-        </Marker>
+          {hasCoords(order.userLatitude, order.userLongitude) && (
+            <Marker
+              coordinate={{ latitude: order.userLatitude, longitude: order.userLongitude }}
+              title={order.userFirstName}
+            />
+          )}
+        </MapView>
+      )}
 
-        <Marker
-          coordinate={{
-            latitude: order.userLatitude,
-            longitude: order.userLongitude,
-          }}
-          title={order.UserName}
-          // description={order.User.address}
-        >
-          <View
-            style={{ backgroundColor: "green", padding: 7, borderRadius: 20 }}
-          >
-            <FontAwesome5 name="user" size={28} color="white" />
-          </View>
-        </Marker>
-      </MapView>
+      <ScrollView contentContainerStyle={{ padding: 16 }}>
+        <Pressable onPress={() => navigation.goBack()}>
+          <Text style={styles.back}>← Retour</Text>
+        </Pressable>
 
-      <BottomSheet
-        ref={bottomSheetRef}
-        snapPoints={snapPoints}
-        handleIndicatorStyle={styles.handleIndicator}
-      >
-        <View style={styles.handleIndicatorContainer}>
-          <Text style={styles.routeDetailsText}>
-            {totalMinutes.toFixed(0)} min
-          </Text>
-          <FontAwesome5
-            name="shopping-bag"
-            size={30}
-            color="#3FC060"
-            style={{ marginHorizontal: 10 }}
-          />
-          <Text style={styles.routeDetailsText}>{totalKm.toFixed(2)} km</Text>
+        <Text style={styles.title}>{order.userFirstName} {order.userLastName}</Text>
+        <Text style={styles.text}>📍 {order.userAddress}</Text>
+        {!!order.note && <Text style={styles.text}>📝 {order.note}</Text>}
+
+        <View style={styles.row}>
+          <Pressable style={[styles.smallButton, { backgroundColor: "#111" }]} onPress={() => callPhone(order.userPhoneNumber)}>
+            <Text style={styles.smallButtonText}>📞 Appeler</Text>
+          </Pressable>
+          <Pressable style={[styles.smallButton, { backgroundColor: "#25D366" }]} onPress={() => openWhatsApp(order.userPhoneNumber)}>
+            <Text style={styles.smallButtonText}>WhatsApp</Text>
+          </Pressable>
+          <Pressable style={[styles.smallButton, { backgroundColor: "#4285F4" }]} onPress={() => openDirections(order)}>
+            <Text style={styles.smallButtonText}>🗺️ Itinéraire</Text>
+          </Pressable>
         </View>
-        <View style={styles.deliveryDetailsContainer}>
-          <Text style={styles.restaurantName}>{order.restaurantName}</Text>
-          <View style={styles.adressContainer}>
-            <Fontisto name="shopping-store" size={22} color="grey" />
-            <Text style={styles.adressText}>{order.restaurantAddress}</Text>
-          </View>
 
-          <View style={styles.adressContainer}>
-            <FontAwesome5 name="user" size={28} color="grey" />
-            <Text style={styles.adressText}>
-              {order.userFirstName} {order.userLastName}
-            </Text>
-          </View>
-
-          <View style={styles.adressContainer}>
-            <FontAwesome5 name="map-marker-alt" size={30} color="grey" />
-            <Text style={styles.adressText}>{order.userAddress}</Text>
-          </View>
-
-          <View style={styles.orderDetailsContainer}>
-            {dishInfo.map((item, index) => {
-              return (
-                <DishInfo
-                  key={index}
-                  id={item.dishId}
-                  quantity={item.quantity}
-                />
-              );
-            })}
+        <View style={styles.card}>
+          <Text style={styles.subtitle}>Commande · {order.restaurantName}</Text>
+          {(order.items || []).map((item) => (
+            <View key={item.dishId} style={styles.itemRow}>
+              <Text style={styles.text}>{item.quantity} × {item.name}</Text>
+              <Text style={styles.text}>{formatDA(item.price * item.quantity)}</Text>
+            </View>
+          ))}
+          <View style={[styles.itemRow, { borderTopWidth: 1, borderColor: "#eee", paddingTop: 8, marginTop: 4 }]}>
+            <Text style={styles.total}>À encaisser (espèces)</Text>
+            <Text style={styles.total}>{formatDA(order.total)}</Text>
           </View>
         </View>
 
-        {deliveryStatus === "READY" && (
-          <Pressable
-            style={{
-              ...styles.buttonContainer,
-              backgroundColor: "#000",
-              position: "absolute",
-              bottom: 80,
-              width: "95%",
-            }}
-            onPress={() => navigation.navigate("OrdersScreen")}
-          >
-            <Text style={styles.buttonText}>Back</Text>
+        {order.status === "READY" && (
+          <Pressable disabled={saving} style={styles.bigButton} onPress={() => setStatus("PICKEDUP")}>
+            <Text style={styles.bigButtonText}>📦 J'ai récupéré la commande</Text>
           </Pressable>
         )}
-
-        <Pressable
-          style={{
-            ...styles.buttonContainer,
-            backgroundColor: "#3FC060",
-          }}
-          onPress={onButtonpressed}
-        >
-          <Text style={styles.buttonText}>{renderButtonTitle()}</Text>
-        </Pressable>
-      </BottomSheet>
-    </View>
+        {order.status === "PICKEDUP" && (
+          <Pressable disabled={saving} style={styles.bigButton} onPress={() => setStatus("COMPLETE")}>
+            <Text style={styles.bigButtonText}>✅ Livrée et payée</Text>
+          </Pressable>
+        )}
+        {order.status === "COMPLETE" && <Text style={[styles.subtitle, { textAlign: "center" }]}>Commande livrée ✅</Text>}
+      </ScrollView>
+    </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  back: { color: "#3FC060", fontWeight: "700", fontSize: 16, marginBottom: 12 },
+  title: { fontSize: 24, fontWeight: "700", marginBottom: 4 },
+  subtitle: { fontSize: 18, fontWeight: "700", marginBottom: 8 },
+  text: { fontSize: 16, color: "#444", marginBottom: 4 },
+  total: { fontSize: 18, fontWeight: "700" },
+  row: { flexDirection: "row", gap: 8, marginVertical: 12 },
+  smallButton: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center" },
+  smallButtonText: { color: "white", fontWeight: "700" },
+  card: { backgroundColor: "#f6f6f6", borderRadius: 12, padding: 14, marginBottom: 16 },
+  itemRow: { flexDirection: "row", justifyContent: "space-between" },
+  bigButton: { backgroundColor: "#3FC060", padding: 16, borderRadius: 12, alignItems: "center", marginBottom: 30 },
+  bigButtonText: { color: "white", fontSize: 18, fontWeight: "700" },
+});
 
 export default OrderDelivery;

@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
+import { uploadImage } from "../../lib/uploadImage";
+import ImagePicker from "./ImagePicker";
 
 const input =
   "w-full px-3 py-2 text-gray-700 bg-transparent outline-none border-2 focus:border-green-500 shadow-sm rounded-lg";
 
 const AddDishModal = ({ setIsActive, restaurantId }) => {
-  const [dish, setDish] = useState({ name: "", price: "", category: "", image: "", description: "" });
+  const [dish, setDish] = useState({ name: "", price: "", category: "", description: "" });
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
 
   const set = (field) => (e) => setDish({ ...dish, [field]: e.target.value });
@@ -17,15 +21,23 @@ const AddDishModal = ({ setIsActive, restaurantId }) => {
     if (!dish.name.trim()) return setError("Le nom est obligatoire.");
     if (!price || price <= 0) return setError("Le prix doit être un nombre (en DA).");
 
-    await addDoc(collection(db, "dishes"), {
-      name: dish.name.trim(),
-      price,
-      category: dish.category.trim(),
-      image: dish.image.trim(),
-      description: dish.description.trim(),
-      restaurantId,
-    });
-    setIsActive(false);
+    setError("");
+    setUploading(true);
+    try {
+      const image = file ? await uploadImage(file) : "";
+      await addDoc(collection(db, "dishes"), {
+        name: dish.name.trim(),
+        price,
+        category: dish.category.trim(),
+        image,
+        description: dish.description.trim(),
+        restaurantId,
+      });
+      setIsActive(false);
+    } catch (err) {
+      setError(err.message);
+      setUploading(false);
+    }
   };
 
   return (
@@ -43,10 +55,15 @@ const AddDishModal = ({ setIsActive, restaurantId }) => {
             <input className={input} placeholder="Nom (ex : Chawarma poulet)" value={dish.name} onChange={set("name")} />
             <input className={input} placeholder="Prix en DA (ex : 450)" inputMode="numeric" value={dish.price} onChange={set("price")} />
             <input className={input} placeholder="Catégorie (ex : Sandwichs, Pizzas, Boissons)" value={dish.category} onChange={set("category")} />
-            <input className={input} placeholder="Lien de l'image (optionnel)" value={dish.image} onChange={set("image")} />
+            <ImagePicker onFile={setFile} />
             <input className={input} placeholder="Description (optionnel)" value={dish.description} onChange={set("description")} />
             {error && <p className="text-red-600 text-sm">{error}</p>}
-            <button className="w-full py-3 rounded-xl bg-green-500 text-white font-bold hover:bg-green-600">Ajouter</button>
+            <button
+              disabled={uploading}
+              className="w-full py-3 rounded-xl bg-green-500 text-white font-bold hover:bg-green-600 disabled:opacity-60"
+            >
+              {uploading ? (file ? "Envoi de la photo…" : "Ajout…") : "Ajouter"}
+            </button>
           </form>
         </div>
       </div>
