@@ -103,7 +103,10 @@ export default function Header({
   const active = useActiveSection(nav.map((n) => n.id));
   const menuButton = useRef<HTMLButtonElement>(null);
 
-  useMotionValueEvent(scrollY, "change", (y) => setScrolled(y > 60));
+  // Two thresholds (hysteresis): the header changes height when it switches,
+  // which moves scrollY. With a single threshold that jump re-crosses it and
+  // the header flickers between big and small near the top of the page.
+  useMotionValueEvent(scrollY, "change", (y) => setScrolled((was) => (was ? y > 30 : y > 100)));
 
   useEffect(() => {
     if (!menuOpen) return;
