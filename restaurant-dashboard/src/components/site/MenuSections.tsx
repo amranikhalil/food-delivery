@@ -148,7 +148,7 @@ export default function MenuSections({ sections, cart }: { sections: MenuSection
             key={section.slug}
             id={section.slug}
             aria-labelledby={`${section.slug}-title`}
-            className="scroll-mt-20 border-t-2 border-ink bg-cream py-22"
+            className="scroll-mt-32 md:scroll-mt-20 border-t-2 border-ink bg-cream py-22"
           >
             <div className="mx-auto flex max-w-container flex-col gap-12 px-6">
               <CheckerTitle id={`${section.slug}-title`}>{section.name}</CheckerTitle>
@@ -164,7 +164,7 @@ export default function MenuSections({ sections, cart }: { sections: MenuSection
             key={section.slug}
             id={section.slug}
             aria-labelledby={`${section.slug}-title`}
-            className="scroll-mt-20 bg-cream-warm py-22"
+            className="scroll-mt-32 md:scroll-mt-20 bg-cream-warm py-22"
           >
             <div className="mx-auto flex max-w-container flex-col gap-12 px-6">
               <SwashTitle id={`${section.slug}-title`}>{section.name}</SwashTitle>

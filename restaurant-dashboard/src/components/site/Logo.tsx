@@ -30,7 +30,7 @@ export default function Logo({ compact = false }: { compact?: boolean }) {
           {BRAND.name}
         </motion.span>
         <motion.span
-          className="overflow-hidden whitespace-nowrap font-ui text-xs font-extrabold uppercase tracking-tagline text-ink"
+          className="hidden overflow-hidden whitespace-nowrap font-ui text-xs sm:block font-extrabold uppercase tracking-tagline text-ink"
           animate={{ height: compact ? 0 : "auto", opacity: compact ? 0 : 1 }}
           transition={{ duration: 0.3 }}
         >

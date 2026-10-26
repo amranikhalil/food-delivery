@@ -50,7 +50,7 @@ export default function Hero({ dishes, phone, menuHref }: { dishes: Dish[]; phon
   };
 
   return (
-    <section id="top" className="mx-auto flex max-w-container scroll-mt-28 flex-wrap items-center gap-12 px-6 pb-22 pt-10">
+    <section id="top" className="mx-auto flex max-w-container scroll-mt-28 flex-wrap items-center gap-8 px-6 pb-22 pt-4 sm:gap-12 sm:pt-10">
       {/* Text column */}
       <div className="flex min-w-0 flex-[1_1_480px] flex-col gap-7">
         <motion.p
@@ -110,7 +110,7 @@ export default function Hero({ dishes, phone, menuHref }: { dishes: Dish[]; phon
 
       {/* Visual column: red circle, tilted photo, "Since 1970" seal */}
       <div
-        className="relative flex min-h-[460px] min-w-0 flex-[1_1_420px] items-center justify-center [perspective:1200px]"
+        className="relative order-first flex min-h-[300px] min-w-0 sm:min-h-[460px] lg:order-none flex-[1_1_420px] items-center justify-center [perspective:1200px]"
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}
       >
@@ -167,12 +167,12 @@ export default function Hero({ dishes, phone, menuHref }: { dishes: Dish[]; phon
           transition={{ type: "spring", stiffness: 140, damping: 12, delay: 1.05 }}
         >
           <motion.div
-            className="flex h-[120px] w-[120px] cursor-default flex-col items-center justify-center rounded-full bg-ink text-center text-white"
+            className="flex h-[84px] w-[84px] sm:h-[120px] sm:w-[120px] cursor-default flex-col items-center justify-center rounded-full bg-ink text-center text-white"
             whileHover={{ rotate: 360, scale: 1.08 }}
             transition={{ type: "spring", stiffness: 120, damping: 14 }}
           >
             <span className="font-ui text-[11px] font-extrabold tracking-micro">SINCE</span>
-            <span className="display text-[36px] leading-none">{BRAND.since}</span>
+            <span className="display text-[26px] sm:text-[36px] leading-none">{BRAND.since}</span>
           </motion.div>
         </motion.div>
       </div>

@@ -5,6 +5,7 @@ import Checker from "./Checker";
 import { BagIcon, CloseIcon } from "./icons";
 import { CART_BUMP_EVENT } from "@/lib/flyToCart";
 import { BRAND } from "@/data/brand";
+import { formatDA } from "@/lib/format";
 
 export interface NavItem {
   id: string;
@@ -30,7 +31,17 @@ function useActiveSection(ids: string[]) {
   return active;
 }
 
-function OrderButton({ count, onClick, className = "" }: { count: number; onClick: () => void; className?: string }) {
+function OrderButton({
+  count,
+  total,
+  onClick,
+  className = "",
+}: {
+  count: number;
+  total?: number;
+  onClick: () => void;
+  className?: string;
+}) {
   const [scope, animate] = useAnimate<HTMLButtonElement>();
 
   // Bounce when a dish lands in the cart (see lib/flyToCart)
@@ -63,9 +74,11 @@ function OrderButton({ count, onClick, className = "" }: { count: number; onClic
             animate={{ scale: 1, width: "auto" }}
             exit={{ scale: 0, width: 0 }}
             transition={{ type: "spring", stiffness: 500, damping: 28 }}
-            className="-mr-2 flex h-7 min-w-[28px] items-center justify-center overflow-hidden rounded-full bg-white px-2 text-[13px] font-black text-red tabular-nums"
+            className={`-mr-2 flex h-7 min-w-[28px] items-center justify-center overflow-hidden whitespace-nowrap rounded-full bg-white px-2 text-[13px] font-black text-red tabular-nums ${
+              total !== undefined ? "ml-auto px-3" : ""
+            }`}
           >
-            {count}
+            {total !== undefined ? `${count} · ${formatDA(total)}` : count}
           </motion.span>
         )}
       </AnimatePresence>
@@ -76,10 +89,12 @@ function OrderButton({ count, onClick, className = "" }: { count: number; onClic
 export default function Header({
   nav,
   cartCount,
+  cartTotal,
   onOrder,
 }: {
   nav: NavItem[];
   cartCount: number;
+  cartTotal: number;
   onOrder: () => void;
 }) {
   const { scrollY } = useScroll();
@@ -158,11 +173,28 @@ export default function Header({
             </button>
           </nav>
         </div>
+
+        {/* Phones: category pills, always visible under the header */}
+        <ul className="flex gap-2 overflow-x-auto bg-ink px-6 py-2.5 md:hidden" aria-label="Catégories">
+          {nav.map((item) => (
+            <li key={item.id} className="flex-none">
+              <a
+                href={`#${item.id}`}
+                className={`block rounded-full border-2 px-4 py-1.5 font-ui text-xs font-extrabold uppercase tracking-button no-underline transition-colors ${
+                  active === item.id ? "border-red bg-red text-white" : "border-white text-white"
+                }`}
+                aria-current={active === item.id ? "true" : undefined}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))}
+        </ul>
       </motion.header>
 
-      {/* Phones: the order button lives at the bottom of the screen */}
-      <div className="fixed bottom-4 right-4 z-30 sm:hidden">
-        <OrderButton count={cartCount} onClick={onOrder} className="shadow-photo" />
+      {/* Phones: full-width order bar at the bottom of the screen */}
+      <div className="fixed inset-x-3 bottom-3 z-30 sm:hidden">
+        <OrderButton count={cartCount} total={cartTotal} onClick={onOrder} className="w-full shadow-photo" />
       </div>
 
       <AnimatePresence>

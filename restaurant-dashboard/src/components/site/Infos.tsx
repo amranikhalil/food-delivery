@@ -63,7 +63,7 @@ export default function Infos({ restaurant }: { restaurant: Restaurant }) {
 
   return (
     <>
-      <section id="infos" aria-labelledby="infos-title" className="scroll-mt-20 bg-ink py-22 text-white">
+      <section id="infos" aria-labelledby="infos-title" className="scroll-mt-32 md:scroll-mt-20 bg-ink py-22 text-white">
         <div className="mx-auto flex max-w-container flex-col gap-12 px-6">
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div id="infos-title">

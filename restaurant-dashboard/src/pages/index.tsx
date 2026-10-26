@@ -50,7 +50,7 @@ export default function Home(initial: MenuData) {
   const title = `${BRAND.name} — ${BRAND.tagline} since ${BRAND.since}`;
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-cream font-ui text-ink antialiased">
+    <div className="min-h-screen overflow-x-clip pb-24 sm:pb-0 bg-cream font-ui text-ink antialiased">
       <Head>
         <title>{title}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -61,7 +61,7 @@ export default function Home(initial: MenuData) {
       </Head>
 
       <Checker roll="left" />
-      <Header nav={nav} cartCount={cart.count} onOrder={openCart} />
+      <Header nav={nav} cartCount={cart.count} cartTotal={cart.subtotal} onOrder={openCart} />
 
       <main>
         <Hero dishes={dishes} phone={restaurant.phone} menuHref={menuHref} />
