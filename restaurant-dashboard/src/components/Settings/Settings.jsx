@@ -8,6 +8,8 @@ const FIELDS = [
   { name: "genre", label: "Type de cuisine", placeholder: "Ex : Fast-food, Pizzeria" },
   { name: "address", label: "Adresse", placeholder: "Ex : Rue Didouche Mourad, Alger" },
   { name: "phone", label: "Téléphone", placeholder: "Ex : 0550 12 34 56" },
+  { name: "hours", label: "Horaires", placeholder: "Ex : Tous les jours · 11h – 23h" },
+  { name: "instagram", label: "Instagram", placeholder: "Ex : bennys.dz" },
   { name: "deliveryFee", label: "Frais de livraison (DA)", placeholder: String(DEFAULT_DELIVERY_FEE) },
   { name: "image", label: "Lien de la photo de couverture", placeholder: "https://…" },
 ];

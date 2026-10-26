@@ -1,0 +1,24 @@
+{
+  "categories": [
+    {
+      "name": "Burgers",
+      "items": [
+        { "slug": "classic", "name": "Classic", "price": 350, "image": "/menu/burger-classic.png", "description": "Salade, tomates, viande hachée, oignons caramélisés, slice" },
+        { "slug": "frenchy", "name": "Frenchy", "price": 350, "image": "/menu/burger-frenchy.png", "description": "Salade, tomates, viande hachée, sauce franchie, champignons, slice" },
+        { "slug": "crispy", "name": "Crispy", "price": 350, "image": "/menu/burger-crispy.png", "description": "Salade, tomates, poulet pané, sauce suisse, slice" },
+        { "slug": "smoked", "name": "Smoked", "price": 450, "image": "/menu/burger-smoked.png", "description": "Salade, tomates, viande hachée, sauce barbecue, oignons caramélisés, onion rings, slice" },
+        { "slug": "super", "name": "Super", "price": 500, "image": "/menu/burger-super.png", "description": "Salade, tomates, viande hachée, camembert pané, œuf, slice" },
+        { "slug": "double", "name": "Double", "price": 550, "image": "/menu/burger-double.png", "description": "Salade, tomates, double viande hachée, oignons caramélisés, slice" }
+      ]
+    },
+    {
+      "name": "Tenders",
+      "items": [
+        { "slug": "tenders-10", "name": "Tenders 10 pièces", "price": 700, "image": "/menu/tenders-10.png", "description": "Avec des frites et 2 sauces" },
+        { "slug": "donette-3", "name": "Donette poulet 3 pièces", "price": 600, "image": "/menu/donette-3.png", "description": "Blanc de poulet haché croustillant farci au fromage, avec 2 sauces spéciales — avec frites" },
+        { "slug": "donette-1", "name": "Donette poulet 1 pièce", "price": 200, "image": "/menu/donette-1.png", "description": "Blanc de poulet haché croustillant farci au fromage, avec 2 sauces spéciales" },
+        { "slug": "frites", "name": "Barquette de frites", "price": 150, "image": "/menu/frites.png", "description": "La barquette" }
+      ]
+    }
+  ]
+}

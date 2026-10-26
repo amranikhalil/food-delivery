@@ -3,6 +3,7 @@
 // Safe to run several times: it overwrites the same documents.
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, writeBatch } from "firebase/firestore";
+import menu from "../src/data/menu.json" with { type: "json" };
 
 const env = process.env;
 if (!env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
@@ -21,34 +22,40 @@ const app = initializeApp({
 const db = getFirestore(app);
 const RESTAURANT_ID = env.NEXT_PUBLIC_RESTAURANT_ID || "demo";
 
+// Same menu as the website's built-in fallback (src/data/menu.json)
 const restaurant = {
-  name: "Chez Karim",
-  genre: "Fast-food · Pizzeria",
+  name: "Benny's",
+  genre: "Street food · Since 1970",
   address: "Centre-ville",
   phone: "0550 00 00 00",
+  hours: "Tous les jours · 11h – 23h",
+  instagram: "bennys.dz",
   deliveryFee: 150,
   image: "",
 };
 
-const dishes = [
-  { category: "Sandwichs", emoji: "🌯", name: "Chawarma poulet", price: 400, description: "Poulet mariné, frites, sauce blanche" },
-  { category: "Sandwichs", emoji: "🌯", name: "Chawarma viande", price: 500, description: "Viande, frites, sauce harissa" },
-  { category: "Sandwichs", emoji: "🥙", name: "Tacos poulet", price: 550, description: "Poulet, frites, sauce fromagère" },
-  { category: "Sandwichs", emoji: "🍔", name: "Burger classique", price: 450, description: "Steak, cheddar, salade, tomate" },
-  { category: "Pizzas", emoji: "🍕", name: "Pizza Margherita", price: 600, description: "Tomate, mozzarella, olives" },
-  { category: "Pizzas", emoji: "🍕", name: "Pizza Thon", price: 750, description: "Tomate, mozzarella, thon, oignons" },
-  { category: "Pizzas", emoji: "🍕", name: "Pizza Viande hachée", price: 850, description: "Viande hachée, poivrons, fromage" },
-  { category: "Accompagnements", emoji: "🍟", name: "Frites", price: 150, description: "Portion de frites maison" },
-  { category: "Boissons", emoji: "🥤", name: "Soda 33 cl", price: 100, description: "" },
-  { category: "Boissons", emoji: "💧", name: "Eau minérale 50 cl", price: 50, description: "" },
-];
+const dishes = menu.categories.flatMap((cat, ci) =>
+  cat.items.map((item, i) => ({
+    id: `${RESTAURANT_ID}-${item.slug}`,
+    data: {
+      name: item.name,
+      price: item.price,
+      description: item.description,
+      category: cat.name,
+      image: item.image,
+      emoji: "",
+      order: ci * 100 + i,
+      restaurantId: RESTAURANT_ID,
+    },
+  }))
+);
 
 await setDoc(doc(db, "restaurants", RESTAURANT_ID), restaurant, { merge: true });
 
 const batch = writeBatch(db);
-dishes.forEach((dish, i) => {
-  batch.set(doc(db, "dishes", `${RESTAURANT_ID}-dish-${i + 1}`), { ...dish, image: "", restaurantId: RESTAURANT_ID });
-});
+// Remove the dishes of the previous demo menu ("-dish-1" … "-dish-10")
+for (let i = 1; i <= 10; i++) batch.delete(doc(db, "dishes", `${RESTAURANT_ID}-dish-${i}`));
+dishes.forEach(({ id, data }) => batch.set(doc(db, "dishes", id), data));
 await batch.commit();
 
 console.log(`✅ Restaurant « ${restaurant.name} » (id: ${RESTAURANT_ID}) et ${dishes.length} plats ajoutés.`);

@@ -1,3 +1,115 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+@layer components {
+  /* Red/white diner checkerboard: 28px tiles, two 45° gradients offset by 14px */
+  .checker {
+    --checker: 28px;
+    background-color: #ffffff;
+    background-image: linear-gradient(45deg, #d7262e 25%, transparent 25%, transparent 75%, #d7262e 75%),
+      linear-gradient(45deg, #d7262e 25%, transparent 25%, transparent 75%, #d7262e 75%);
+    background-size: var(--checker) var(--checker);
+    background-position: 0 0, calc(var(--checker) / 2) calc(var(--checker) / 2);
+  }
+  .checker-roll {
+    animation: checker-roll 2.4s linear infinite;
+  }
+  .checker-roll-reverse {
+    animation: checker-roll 2.4s linear infinite reverse;
+  }
+
+  /* Fraunces display: weight 900, SOFT 100 (rounded, Cooper-style) */
+  .display {
+    font-family: var(--font-display), Georgia, serif;
+    font-weight: 900;
+    font-variation-settings: "SOFT" 100;
+  }
+
+  /* Menu label styles from the printed menu */
+  .menu-desc {
+    @apply font-ui text-[15px] uppercase leading-[1.5] tracking-desc text-text-muted;
+  }
+  .menu-name {
+    @apply font-ui text-[28px] font-black uppercase tracking-item text-ink [font-stretch:125%];
+  }
+  .menu-price {
+    @apply whitespace-nowrap font-ui text-[26px] font-black uppercase text-ink [font-stretch:115%];
+  }
+
+  /* Pill buttons */
+  .btn {
+    @apply relative inline-flex min-h-[44px] select-none items-center justify-center gap-2 overflow-hidden whitespace-nowrap rounded-full font-ui text-[15px] font-extrabold uppercase tracking-button no-underline transition-colors duration-200 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-red;
+  }
+  .btn-red {
+    @apply bg-red text-white hover:bg-red-dark hover:text-white;
+  }
+  .btn-ink {
+    @apply bg-ink text-white hover:bg-red hover:text-white;
+  }
+  .btn-outline {
+    @apply border-2 border-ink text-ink hover:bg-ink hover:text-white;
+  }
+
+  /* Shine that sweeps across a button on hover */
+  .btn-shine::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.35) 50%, transparent 70%);
+    transform: translateX(-120%);
+    transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+  }
+  .btn-shine:hover::after {
+    transform: translateX(120%);
+  }
+
+  .field {
+    @apply w-full rounded-2xl border-2 border-ink bg-white px-4 py-3 font-ui text-[16px] text-ink outline-none transition-[border-color,box-shadow] placeholder:text-text-label/70 focus:border-red focus:shadow-[4px_4px_0_#D7262E];
+  }
+}
+
+@keyframes checker-roll {
+  to {
+    background-position: calc(var(--checker) * 2) 0, calc(var(--checker) * 2.5) calc(var(--checker) / 2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .checker-roll,
+  .checker-roll-reverse {
+    animation: none;
+  }
+  .btn-shine::after {
+    display: none;
+  }
+}
+
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-14deg);
+  }
+  50% {
+    transform: rotate(12deg);
+  }
+  75% {
+    transform: rotate(-8deg);
+  }
+}

@@ -1,7 +1,13 @@
-export const formatDA = (amount) =>
-  `${Number(amount || 0).toLocaleString("fr-DZ")} DA`;
+// Same output on the server and in the browser (toLocaleString can differ
+// between Node and browsers, which breaks hydration).
+export const formatDA = (amount: number | string | null | undefined): string => {
+  const n = Math.round(Number(amount) || 0);
+  return `${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} DA`;
+};
 
-export const formatDate = (timestamp) => {
+type TimestampLike = { toDate?: () => Date } | null | undefined;
+
+export const formatDate = (timestamp: TimestampLike): string => {
   if (!timestamp?.toDate) return "—";
   return timestamp.toDate().toLocaleString("fr-FR", {
     day: "2-digit",
@@ -12,13 +18,22 @@ export const formatDate = (timestamp) => {
 };
 
 // Algerian mobile numbers: 05/06/07 + 8 digits (also accepts +213 / 00213)
-export const normalizePhone = (raw) => {
+export const normalizePhone = (raw: string | null | undefined): string | null => {
   const digits = (raw || "").replace(/[^\d+]/g, "");
   const local = digits.replace(/^(\+213|00213)/, "0");
   return /^0[567]\d{8}$/.test(local) ? local : null;
 };
 
-export const STATUS = {
+export type OrderStatus =
+  | "PENDING"
+  | "ACCEPTED"
+  | "PREPARING"
+  | "READY"
+  | "PICKEDUP"
+  | "COMPLETE"
+  | "DECLINED";
+
+export const STATUS: Record<OrderStatus, { label: string; emoji: string; className: string }> = {
   PENDING: { label: "En attente", emoji: "⏳", className: "border-yellow-400 text-yellow-700 bg-yellow-50" },
   ACCEPTED: { label: "Acceptée", emoji: "👍", className: "border-blue-400 text-blue-700 bg-blue-50" },
   PREPARING: { label: "En préparation", emoji: "🍳", className: "border-orange-400 text-orange-700 bg-orange-50" },
@@ -28,10 +43,10 @@ export const STATUS = {
   DECLINED: { label: "Refusée", emoji: "❌", className: "border-red-400 text-red-700 bg-red-50" },
 };
 
-export const ACTIVE_STATUSES = ["PENDING", "ACCEPTED", "PREPARING", "READY", "PICKEDUP"];
+export const ACTIVE_STATUSES: OrderStatus[] = ["PENDING", "ACCEPTED", "PREPARING", "READY", "PICKEDUP"];
 
 // Next step for the restaurant, from each status
-export const NEXT_STEP = {
+export const NEXT_STEP: Partial<Record<OrderStatus, { to: OrderStatus; label: string }>> = {
   ACCEPTED: { to: "PREPARING", label: "Commencer la préparation" },
   PREPARING: { to: "READY", label: "Commande prête" },
   // Normally done by the driver app; kept here so a restaurant without the app can finish the order

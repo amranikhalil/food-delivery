@@ -20,6 +20,8 @@ Un seul site avec deux parties :
    ```
    npm run seed
    ```
+   Le menu de démo (Benny's : burgers et tenders, avec photos) vient de `src/data/menu.json`.
+   Le site l'affiche aussi tout seul si Firestore n'est pas joignable.
 
 ## 3. Lancer
 ```
