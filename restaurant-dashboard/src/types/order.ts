@@ -23,4 +23,4 @@ export interface Order {
   total: number;
   paymentMethod: "CASH_ON_DELIVERY";
   status: OrderStatus;
-  createdAt: Timestamp;
+  createdAt: Timestamp}
