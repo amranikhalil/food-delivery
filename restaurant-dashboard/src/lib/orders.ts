@@ -73,3 +73,13 @@ export async function placeOrder(form: CustomerForm, lines: CartLine[], restaura
   } catch {}
   return orderRef.id;
 }
+export async function notifyRestaurant(orderId: string){
+   fetch("/api/notify-order", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ orderId }),
+    keepalive: true,
+  }).catch(() => {});
+}

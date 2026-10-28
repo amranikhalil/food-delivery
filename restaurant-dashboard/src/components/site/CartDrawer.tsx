@@ -9,7 +9,7 @@ import Checker from "./Checker";
 import DishImage from "./DishImage";
 import { ArrowIcon, BackIcon, BagIcon, CloseIcon } from "./icons";
 import QtyControl from "./QtyControl";
-
+import {notifyRestaurant} from "@/lib/orders";
 type Step = "cart" | "checkout";
 
 // Steps slide in from the side they come from
@@ -82,6 +82,7 @@ export default function CartDrawer({
     setSending(true);
     try {
       const id = await placeOrder(form, cart.lines, restaurant);
+      notifyRestaurant(id);
       cart.clear();
       router.push(`/commande/${id}`);
     } catch (err) {
